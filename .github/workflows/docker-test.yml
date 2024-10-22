@@ -1,28 +1,37 @@
-  build-and-push-Docker:
+name: Build and Push Docker Images to Docker Hub
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    # Step 1: Check out the repository
+    - name: Check out the repo
+      uses: actions/checkout@v4
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    # Step 2: Login to Docker Hub
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}  # Use secret for username
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Docker Build and Push client side
-        uses: docker/build-push-action@v3
-        with:
-          context: client/
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/client:latest
-          file: frontend/Dockerfile
+    # Step 3: Build and Push Frontend (Client) Image
+    - name: Build and Push Frontend (Client) Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-deploy-client:latest  # Use secret for username
 
-      - name: Docker Build and Push server side
-        uses: docker/build-push-action@v3
-        with:
-          context: server/
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/server:latest
-          file: server/Dockerfile
-
+    # Step 4: Build and Push Backend Image
+    - name: Build and Push Backend  Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./server
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-deploy-server:latest  # Use secret for username
