@@ -7,12 +7,19 @@ on:
 
 jobs:
   build:
-    name: Push Docker Image to Docker Hub
+    name: Build and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
-      
+
+      # Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install docker-compose -y
+
+      # Login to Docker Hub
       - name: Login to Docker Hub
         id: docker-hub
         env:
@@ -21,18 +28,13 @@ jobs:
         run: |
           echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
 
-      - name: Build and Tag Client Docker Image
+      # Build and tag Docker images using Docker Compose
+      - name: Build Docker Images
         run: |
-          docker build ./client -t ${{secrets.DOCKERHUB_USERNAME}}/client-app:latest
+          docker-compose -f ./docker-compose.yml build
 
-      - name: Build and Tag Server Docker Image
+      # Push Docker Images
+      - name: Push Docker Images
         run: |
-          docker build ./server -t ${{secrets.DOCKERHUB_USERNAME}}/server-app:latest
+          docker-compose -f ./docker-compose.yml push
 
-      - name: Push Client Docker Image
-        run: |
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/client-app:latest
-
-      - name: Push Server Docker Image
-        run: |
-          docker push ${{secrets.DOCKERHUB_USERNAME}}/server-app:latest
