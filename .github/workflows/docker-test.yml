@@ -1,37 +1,39 @@
-name: Build and Push Docker Images to Docker Hub
+name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
+    name: Push Docker Image to Docker Hub
     runs-on: ubuntu-latest
 
+
     steps:
-    # Step 1: Check out the repository
-    - name: Check out the repo
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v2
+      
+      - name: Login to Docker Hub
+        id: docker-hub
+        env:
+          DOCKERHUB_USERNAME: ${{secrets.DOCKERHUB_USERNAME}}
+          DOCKERHUB_PASSWORD: ${{secrets.DOCKERHUB_PASSWORD}}
+        run: |
+          echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
 
-    # Step 2: Login to Docker Hub
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}  # Use secret for username
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and Tag Client Docker Image
+        run: |
+          docker build ./client -t ${{secrets.DOCKERHUB_USERNAME}}/client-app:latest
 
-    # Step 3: Build and Push Frontend (Client) Image
-    - name: Build and Push Frontend (Client) Image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./client
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-deploy-client:latest  # Use secret for username
+      - name: Build and Tag Server Docker Image
+        run: |
+          docker build ./server -t ${{secrets.DOCKERHUB_USERNAME}}/server-app:latest
 
-    # Step 4: Build and Push Backend Image
-    - name: Build and Push Backend  Image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./server
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-deploy-server:latest  # Use secret for username
+      - name: Push Client Docker Image
+        run: |
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/client-app:latest
+
+      - name: Push Server Docker Image
+        run: |
+          docker push ${{secrets.DOCKERHUB_USERNAME}}/server-app:latest
