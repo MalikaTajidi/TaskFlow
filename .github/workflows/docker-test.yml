@@ -7,26 +7,30 @@ on:
 
 jobs:
   build:
-    name: Build and Push Docker Images
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      # Install Docker Compose
-      - name: Install Docker Compose
+      - name: Log in to Docker Hub
         run: |
-          sudo apt-get update
-          sudo apt-get install docker-compose -y
+          docker login -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_PASSWORD }}"
 
-      # Login to Docker Hub
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Build Client Image
+        run: |
+          cd client
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/taskflow-client:latest .
 
-      # Build Docker Images
-      - name: Build Docker Images
-        run: docker-compose -f ./docker-compose.yml build
+      - name: Push Client Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/taskflow-client:latest
 
-      # Push Docker Images
-      - name: Push Docker Images
-        run: docker-compose -f ./docker-compose.yml push
+      - name: Build Server Image
+        run: |
+          cd server
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/taskflow-server:latest .
+
+      - name: Push Server Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/taskflow-server:latest
